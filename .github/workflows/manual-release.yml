@@ -1,4 +1,4 @@
-name: Manual Extension Release
+name: Manual Extension Release with GitHub Release
 
 env:
   RELEASE_DIR: "release_build"
@@ -18,17 +18,27 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release Version (e.g., 1.2.4). If empty, will try to get from manifest.json.'
+        description: 'Release Version (e.g., 1.2.4). Must be a valid tag name. If empty, manifest version will be used.'
         required: false
         default: ''
       branchName:
         description: 'Branch to build from'
         required: true
         default: 'master'
+      releaseNotes:
+        description: 'Notes for this release (optional)'
+        required: false
+        default: 'Bug fixes and improvements.'
+      isPreRelease:
+        description: 'Mark this as a pre-release? (true/false)'
+        required: false
+        default: 'false'
 
 jobs:
-  build_and_package_extension:
+  build_and_release_extension:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout code from specified branch
@@ -41,92 +51,116 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Determine Version
+      - name: Determine Version and Tag
         id: get_version
         run: |
           VERSION_INPUT=${{ github.event.inputs.version }}
           if [ -z "$VERSION_INPUT" ]; then
             if [ -f "${{ env.MANIFEST_FILE }}" ]; then #
-              VERSION=$(grep '"version":' ${{ env.MANIFEST_FILE }} | sed 's/.*"version": "\(.*\)",/\1/')
+              VERSION_NUMBER=$(grep '"version":' ${{ env.MANIFEST_FILE }} | sed 's/.*"version": "\(.*\)",/\1/')
             else
               echo "Error: ${{ env.MANIFEST_FILE }} not found and no version input provided."
               exit 1
             fi
+            TAG_NAME="v${VERSION_NUMBER}"
           else
-            VERSION=$VERSION_INPUT
+            VERSION_NUMBER=$VERSION_INPUT
+            if [[ "$VERSION_INPUT" == v* ]]; then
+                TAG_NAME="$VERSION_INPUT"
+                VERSION_NUMBER="${VERSION_INPUT#v}"
+            else
+                TAG_NAME="v$VERSION_INPUT"
+                VERSION_NUMBER="$VERSION_INPUT"
+            fi
           fi
-          echo "Version determined: $VERSION"
-          echo "version_number=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version number: $VERSION_NUMBER"
+          echo "Tag for release: $TAG_NAME"
+          echo "version_number_output=$VERSION_NUMBER" >> $GITHUB_OUTPUT
+          echo "tag_name_output=$TAG_NAME" >> $GITHUB_OUTPUT
         shell: bash
 
       - name: Create Release Directory and Prepare Files
         run: |
-          VERSION_NUMBER="${{ steps.get_version.outputs.version_number }}"
+          VERSION_TO_PACKAGE="${{ steps.get_version.outputs.version_number_output }}"
 
-          echo "Packaging version $VERSION_NUMBER..."
+          echo "Packaging version $VERSION_TO_PACKAGE..."
           mkdir -p "${{ env.RELEASE_DIR }}"
 
-          # 1. Copy manifest.json to the root of RELEASE_DIR
+          # 1. Copy manifest.json
           if [ -f "${{ env.MANIFEST_FILE }}" ]; then #
             cp "${{ env.MANIFEST_FILE }}" "${{ env.RELEASE_DIR }}/${{ env.MANIFEST_FILE }}"
-            echo "Copied ${{ env.MANIFEST_FILE }} to ${{ env.RELEASE_DIR }}/"
           else
-            echo "Error: ${{ env.MANIFEST_FILE }} not found in repository root."
-            exit 1
+            echo "Error: ${{ env.MANIFEST_FILE }} not found." ; exit 1
           fi
 
-          # 2. Copy and rename the 128px logo to the root of RELEASE_DIR
+          # 2. Copy logo
           if [ -f "${{ env.LOGO_SOURCE_PATH }}" ]; then #
             cp "${{ env.LOGO_SOURCE_PATH }}" "${{ env.RELEASE_DIR }}/${{ env.LOGO_DEST_NAME }}"
-            echo "Copied ${{ env.LOGO_SOURCE_PATH }} to ${{ env.RELEASE_DIR }}/${{ env.LOGO_DEST_NAME }}"
           else
             echo "Error: Source logo ${{ env.LOGO_SOURCE_PATH }} not found."
-            # Consider uncommenting to exit if this is a critical error:
-            # exit 1
           fi
 
-          # 3. Copy other essential core files to RELEASE_DIR root
+          # 3. Copy core files
           # These files are: background.js, content_script.js, popup.html, popup.js
           echo "Copying core files:"
           for file_to_copy in ${{ env.CORE_FILES_TO_COPY }}
           do
             if [ -f "$file_to_copy" ]; then
-              cp "$file_to_copy" "${{ env.RELEASE_DIR }}/"
-              echo "  Copied $file_to_copy"
+              cp "$file_to_copy" "${{ env.RELEASE_DIR }}/" ; echo "  Copied $file_to_copy"
             else
               echo "  Warning: Core file '$file_to_copy' not found. Skipping."
             fi
           done
 
-          # 4. Copy the entire source images directory to the destination images directory in RELEASE_DIR
+          # 4. Copy images directory
           # This is important as manifest.json refers to icons within this folder
           if [ -d "${{ env.IMAGES_DIR_SOURCE }}" ]; then
             mkdir -p "${{ env.RELEASE_DIR }}/${{ env.IMAGES_DIR_DEST }}"
             cp -R "${{ env.IMAGES_DIR_SOURCE }}"/* "${{ env.RELEASE_DIR }}/${{ env.IMAGES_DIR_DEST }}/"
-            echo "Copied contents of '${{ env.IMAGES_DIR_SOURCE }}' directory to ${{ env.RELEASE_DIR }}/${{ env.IMAGES_DIR_DEST }}/"
           else
-            echo "Warning: Source images directory '${{ env.IMAGES_DIR_SOURCE }}' not found. Icons might be missing."
+            echo "Warning: Source images directory '${{ env.IMAGES_DIR_SOURCE }}' not found."
           fi
-
           echo "Files prepared in ${{ env.RELEASE_DIR }}"
         shell: bash
 
       - name: Create ZIP File
+        id: create_zip
         run: |
-          RELEASE_DIR_CONST="${{ env.RELEASE_DIR }}" 
-          VERSION_NUMBER="${{ steps.get_version.outputs.version_number }}"
-          ZIP_FILE_NAME="${{ env.ZIP_FILE_NAME_PREFIX }}-v${VERSION_NUMBER}.zip"
+          VERSION_TO_PACKAGE="${{ steps.get_version.outputs.version_number_output }}"
+          ZIP_FILE_NAME_VALUE="${{ env.ZIP_FILE_NAME_PREFIX }}-v${VERSION_TO_PACKAGE}.zip"
 
-          echo "Creating ZIP file: ${ZIP_FILE_NAME} from contents of ${RELEASE_DIR_CONST}"
-          cd "${RELEASE_DIR_CONST}"
-          zip -r "../${ZIP_FILE_NAME}" ./*
+          echo "Creating ZIP file: ${ZIP_FILE_NAME_VALUE}"
+          cd "${{ env.RELEASE_DIR }}"
+          zip -r "../${ZIP_FILE_NAME_VALUE}" ./*
           cd ..
-          echo "Created ${ZIP_FILE_NAME}"
+          echo "Created ${ZIP_FILE_NAME_VALUE}"
+          echo "zip_name=${ZIP_FILE_NAME_VALUE}" >> $GITHUB_OUTPUT
         shell: bash
 
-      - name: Upload Release ZIP as Artifact
+      - name: Create GitHub Release
+        id: create_gh_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.get_version.outputs.tag_name_output }}
+          release_name: Release ${{ steps.get_version.outputs.tag_name_output }}
+          body: ${{ github.event.inputs.releaseNotes }}
+          draft: false
+          prerelease: ${{ github.event.inputs.isPreRelease }}
+
+      - name: Upload Release Asset (ZIP file)
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_gh_release.outputs.upload_url }}
+          asset_path: ./${{ steps.create_zip.outputs.zip_name }}
+          asset_name: ${{ steps.create_zip.outputs.zip_name }}
+          asset_content_type: application/zip
+
+      - name: Upload ZIP as Workflow Artifact (optional)
         uses: actions/upload-artifact@v4
         with:
-          # Set the artifact name to the exact desired ZIP filename for clarity in GitHub UI
-          name: ${{ env.ZIP_FILE_NAME_PREFIX }}-v${{ steps.get_version.outputs.version_number }}
-          path: ${{ env.ZIP_FILE_NAME_PREFIX }}-v${{ steps.get_version.outputs.version_number }}.zip
+          name: ${{ env.ZIP_FILE_NAME_PREFIX }}-v${{ steps.get_version.outputs.version_number_output }}
+          path: ${{ steps.create_zip.outputs.zip_name }}
