@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini Auto Expander Settings</title>
+    <style>
+        /* Defines content for the extension's popup, displayed on toolbar icon click. */
+        body {
+            font-family: 'Roboto', 'Google Sans', Arial, sans-serif;
+            margin: 0;
+            padding: 16px;
+            background-color: #fff;
+            color: #202124;
+            min-width: 340px;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            border-radius: 8px; /* Rounds content body within Chrome's popup frame. */
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .header {
+            font-size: 14px;
+            color: #202124;
+            padding-bottom: 4px;
+            margin-bottom: 8px;
+        }
+        .toggle-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 4px;
+            border-radius: 4px;
+        }
+        .toggle-label {
+            font-size: 13px;
+            color: #3c4043;
+            margin-right: 10px;
+            white-space: nowrap;
+            flex-grow: 1;
+        }
+        /* Styles for the CSS-based toggle switch. */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 20px;
+            flex-shrink: 0;
+        }
+        .toggle-switch input { /* Hide default checkbox. */
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider { /* Toggle track. */
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc; /* Inactive state color. */
+            transition: .4s;
+            border-radius: 20px; /* Pill shape. */
+        }
+        .slider:before { /* Toggle knob. */
+            position: absolute;
+            content: "";
+            height: 14px;
+            width: 14px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%; /* Round knob. */
+        }
+        input:checked + .slider {
+            background-color: #4285F4; /* Active state color. */
+        }
+        input:focus + .slider { /* Optional focus outline. */
+            box-shadow: 0 0 1px #4285F4;
+        }
+        input:checked + .slider:before { /* Knob movement when active. */
+            transform: translateX(19px);
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">Gemini Auto Expander</div>
+    <div class="toggle-row" id="toggleRow">
+        <span class="toggle-label">Enable Auto-Expand</span>
+        <label class="toggle-switch">
+            <input type="checkbox" id="enableAutoExpandToggle">
+            <span class="slider round"></span>
+        </label>
+    </div>
+</div>
+<script src="popup.js"></script>
+</body>
+</html>
