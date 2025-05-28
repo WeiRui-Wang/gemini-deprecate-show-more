@@ -5,7 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gemini Auto Expander Settings</title>
     <style>
-        /* Defines content for the extension's popup, displayed on toolbar icon click. */
+        /*
+         Defines the content for the extension's popup window.
+         This appears when the user clicks the extension icon in the Chrome toolbar.
+        */
         body {
             font-family: 'Roboto', 'Google Sans', Arial, sans-serif;
             margin: 0;
@@ -18,7 +21,7 @@
             -webkit-user-select: none;
             -moz-user-select: none;
             -ms-user-select: none;
-            border-radius: 8px; /* Rounds content body within Chrome's popup frame. */
+            border-radius: 8px; /* Applied to the content body for rounded appearance within Chrome's popup frame. */
         }
         .container {
             display: flex;
@@ -26,7 +29,7 @@
             gap: 12px;
         }
         .header {
-            font-size: 14px;
+            font-size: 16px;
             color: #202124;
             padding-bottom: 4px;
             margin-bottom: 8px;
@@ -39,7 +42,7 @@
             border-radius: 4px;
         }
         .toggle-label {
-            font-size: 13px;
+            font-size: 12px;
             color: #3c4043;
             margin-right: 10px;
             white-space: nowrap;
@@ -53,23 +56,23 @@
             height: 20px;
             flex-shrink: 0;
         }
-        .toggle-switch input { /* Hide default checkbox. */
+        .toggle-switch input { /* Hide the default checkbox */
             opacity: 0;
             width: 0;
             height: 0;
         }
-        .slider { /* Toggle track. */
+        .slider { /* The track of the toggle */
             position: absolute;
             cursor: pointer;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background-color: #ccc; /* Inactive state color. */
+            background-color: #ccc; /* Default color for inactive state */
             transition: .4s;
-            border-radius: 20px; /* Pill shape. */
+            border-radius: 20px; /* Pill shape */
         }
-        .slider:before { /* Toggle knob. */
+        .slider:before { /* The knob of the toggle */
             position: absolute;
             content: "";
             height: 14px;
@@ -78,15 +81,15 @@
             bottom: 3px;
             background-color: white;
             transition: .4s;
-            border-radius: 50%; /* Round knob. */
+            border-radius: 50%; /* Round knob */
         }
         input:checked + .slider {
-            background-color: #4285F4; /* Active state color. */
+            background-color: #4285F4; /* Color for active state (Google Blue) */
         }
-        input:focus + .slider { /* Optional focus outline. */
+        input:focus + .slider { /* Optional: focus outline */
             box-shadow: 0 0 1px #4285F4;
         }
-        input:checked + .slider:before { /* Knob movement when active. */
+        input:checked + .slider:before { /* Knob movement */
             transform: translateX(19px);
         }
     </style>
@@ -98,8 +101,7 @@
         <span class="toggle-label">Enable Auto-Expand</span>
         <label class="toggle-switch">
             <input type="checkbox" id="enableAutoExpandToggle">
-            <span class="slider round"></span>
-        </label>
+            <span class="slider round"></span> </label>
     </div>
 </div>
 <script src="popup.js"></script>
