@@ -1,4 +1,4 @@
-name: Manual Extension Release with GitHub Release
+name: Extension Release
 
 env:
   RELEASE_DIR: "release_build"

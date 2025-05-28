@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Gemini Auto Expander",
-  "version": "1.2.3",
-  "description": "Automatically expands content on Gemini pages. Settings and toggle available via the extension icon.",
+  "version": "1.2.5",
+  "description": "Lightweight extension for Gemini that automatically expands full chat history lists for easy viewing.",
   "permissions": [
     "storage",
     "activeTab"

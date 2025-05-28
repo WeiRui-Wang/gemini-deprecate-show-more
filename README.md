@@ -1,10 +1,10 @@
 # Gemini Auto Expander Chrome Extension
 
-The "Gemini Auto Expander" is a browser extension for Google Chrome designed to enhance user experience on Gemini pages by automatically expanding content sections.
+The "Gemini Auto Expander" is a browser extension for Google Chrome designed to enhance user experience on Gemini by automatically expanding content sections.
 
 ## Features
 
-* **Automatic Content Expansion**: Eliminates the need to manually click "show more" or similar buttons on Gemini (gemini.google.com) pages. Content is expanded by default for a smoother reading experience.
+* **Automatic Content Expansion**: Automated clicking of "show more" buttons on [Gemini](https://gemini.google.com/). Content is expanded by default for a smoother reading experience.
 * **Toggle Functionality**: Users can enable or disable the auto-expansion feature via the extension's popup icon in the Chrome toolbar.
 * **State Persistence**: The enabled/disabled state of the extension is saved locally, so user preference is remembered across browser sessions.
 
@@ -28,7 +28,7 @@ Currently, this extension is not published on the Chrome Web Store. To install a
 
 Once installed:
 
-* **Automatic Expansion**: Navigate to any Gemini page (e.g., `https://gemini.google.com/...`). Content sections that typically require a "show more" click should now be automatically expanded.
+* **Automatic Expansion**: Navigate to any Gemini interface (e.g., `*://gemini.google.com/*`). Content sections that typically require a "show more" click should now be automatically expanded.
 * **Toggle On/Off**:
     * Click the "Gemini Auto Expander" icon in your Chrome toolbar (it should be an icon with active/inactive states).
     * A popup will appear with a toggle switch labeled "Enable Auto-Expand".
@@ -40,7 +40,7 @@ The extension consists of the following key files:
 
 * `manifest.json`: Defines the extension's properties, permissions, and core components.
 * `background.js`: Service worker managing state, icon updates, and communication with content scripts.
-* `content_script.js`: Injected into Gemini pages to handle the logic for finding and interacting with "show more" elements.
+* `content_script.js`: Injected into Gemini interface to handle the logic for finding and interacting with "show more" elements.
 * `popup.html` & `popup.js`: Define the structure and logic for the extension's popup interface.
 * `images/`: Contains icons used by the extension.
 * `128.png`: The primary 128x128 icon for the extension (as referenced in `manifest.json` to be located in the `images` folder).
