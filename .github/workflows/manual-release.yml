@@ -128,5 +128,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           # Set the artifact name to the exact desired ZIP filename for clarity in GitHub UI
-          name: ${{ env.ZIP_FILE_NAME_PREFIX }}-v${{ steps.get_version.outputs.version_number }}.zip
+          name: ${{ env.ZIP_FILE_NAME_PREFIX }}-v${{ steps.get_version.outputs.version_number }}
           path: ${{ env.ZIP_FILE_NAME_PREFIX }}-v${{ steps.get_version.outputs.version_number }}.zip
