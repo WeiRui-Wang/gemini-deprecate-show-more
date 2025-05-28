@@ -30,8 +30,12 @@ on:
         required: false
         default: 'Bug fixes and improvements.'
       isPreRelease:
-        description: 'Mark this as a pre-release? (true/false)'
-        required: false
+        description: 'Mark this as a pre-release?'
+        required: true # Making it required since it's a choice now
+        type: choice
+        options:
+          - 'false'
+          - 'true'
         default: 'false'
 
 jobs:
@@ -147,7 +151,7 @@ jobs:
           release_name: Release ${{ steps.get_version.outputs.tag_name_output }}
           body: ${{ github.event.inputs.releaseNotes }}
           draft: false
-          prerelease: ${{ github.event.inputs.isPreRelease }}
+          prerelease: ${{ github.event.inputs.isPreRelease }} # Input will be 'true' or 'false' as strings
 
       - name: Upload Release Asset (ZIP file)
         uses: actions/upload-release-asset@v1
