@@ -1,0 +1,134 @@
+name: Manual Extension Release
+
+env:
+  RELEASE_DIR: "release_build"
+  MANIFEST_FILE: "manifest.json"
+  LOGO_SOURCE_PATH: "images/icon_inactive_128.png"
+  LOGO_DEST_NAME: "128.png"
+  IMAGES_DIR_SOURCE: "images"
+  IMAGES_DIR_DEST: "images"
+  CORE_FILES_TO_COPY: >
+    background.js
+    content_script.js
+    popup.html
+    popup.js
+  ZIP_FILE_NAME_PREFIX: "gemini-auto-expander" # Extracted prefix for the ZIP file
+
+on:
+  workflow_dispatch: # Enables manual triggering
+    inputs:
+      version:
+        description: 'Release Version (e.g., 1.2.4). If empty, will try to get from manifest.json.'
+        required: false
+        default: ''
+      branchName:
+        description: 'Branch to build from'
+        required: true
+        default: 'master' # Default branch name
+
+jobs:
+  build_and_package_extension:
+    runs-on: ubuntu-latest # Specifies the runner environment
+
+    steps:
+      - name: Checkout code from specified branch
+        uses: actions/checkout@v4 # Action to checkout the repository
+        with:
+          ref: ${{ github.event.inputs.branchName }} # Uses the input branch
+
+      - name: Set up Node.js (Optional - if build/lint scripts are used)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20' # Specify the Node.js version
+
+      - name: Determine Version
+        id: get_version
+        run: |
+          VERSION_INPUT=${{ github.event.inputs.version }}
+          if [ -z "$VERSION_INPUT" ]; then
+            # Attempt to read from manifest.json
+            if [ -f "${{ env.MANIFEST_FILE }}" ]; then
+              VERSION=$(grep '"version":' ${{ env.MANIFEST_FILE }} | sed 's/.*"version": "\(.*\)",/\1/')
+            else
+              echo "Error: ${{ env.MANIFEST_FILE }} not found and no version input provided."
+              exit 1
+            fi
+          else
+            VERSION=$VERSION_INPUT
+          fi
+          echo "Version determined: $VERSION"
+          echo "version_number=$VERSION" >> $GITHUB_OUTPUT
+        shell: bash
+
+      - name: Create Release Directory and Prepare Files
+        run: |
+          VERSION_NUMBER="${{ steps.get_version.outputs.version_number }}" # Get version from previous step
+
+          echo "Packaging version $VERSION_NUMBER..."
+          mkdir -p "${{ env.RELEASE_DIR }}" # Create the main release directory
+
+          # 1. Copy manifest.json to the root of RELEASE_DIR
+          if [ -f "${{ env.MANIFEST_FILE }}" ]; then #
+            cp "${{ env.MANIFEST_FILE }}" "${{ env.RELEASE_DIR }}/${{ env.MANIFEST_FILE }}"
+            echo "Copied ${{ env.MANIFEST_FILE }} to ${{ env.RELEASE_DIR }}/"
+          else
+            echo "Error: ${{ env.MANIFEST_FILE }} not found in repository root."
+            exit 1
+          fi
+
+          # 2. Copy and rename the 128px logo to the root of RELEASE_DIR
+          if [ -f "${{ env.LOGO_SOURCE_PATH }}" ]; then #
+            cp "${{ env.LOGO_SOURCE_PATH }}" "${{ env.RELEASE_DIR }}/${{ env.LOGO_DEST_NAME }}"
+            echo "Copied ${{ env.LOGO_SOURCE_PATH }} to ${{ env.RELEASE_DIR }}/${{ env.LOGO_DEST_NAME }}"
+          else
+            echo "Error: Source logo ${{ env.LOGO_SOURCE_PATH }} not found."
+            # Consider uncommenting to exit if this is a critical error:
+            # exit 1
+          fi
+
+          # 3. Copy other essential core files to RELEASE_DIR root
+          # These files are: background.js, content_script.js, popup.html, popup.js
+          echo "Copying core files:"
+          for file_to_copy in ${{ env.CORE_FILES_TO_COPY }}; do
+            if [ -f "$file_to_copy" ]; then
+              cp "$file_to_copy" "${{ env.RELEASE_DIR }}/"
+              echo "  Copied $file_to_copy"
+            else
+              echo "  Warning: Core file '$file_to_copy' not found. Skipping."
+            fi
+          done
+
+          # 4. Copy the entire source images directory to the destination images directory in RELEASE_DIR
+          # This is important as manifest.json refers to icons within this folder
+          if [ -d "${{ env.IMAGES_DIR_SOURCE }}" ]; then
+            mkdir -p "${{ env.RELEASE_DIR }}/${{ env.IMAGES_DIR_DEST }}"
+            cp -R "${{ env.IMAGES_DIR_SOURCE }}"/* "${{ env.RELEASE_DIR }}/${{ env.IMAGES_DIR_DEST }}/"
+            echo "Copied contents of '${{ env.IMAGES_DIR_SOURCE }}' directory to ${{ env.RELEASE_DIR }}/${{ env.IMAGES_DIR_DEST }}/"
+          else
+            echo "Warning: Source images directory '${{ env.IMAGES_DIR_SOURCE }}' not found. Icons might be missing."
+          fi
+
+          echo "Files prepared in ${{ env.RELEASE_DIR }}"
+        shell: bash
+
+      - name: Create ZIP File
+        run: |
+          RELEASE_DIR_CONST="${{ env.RELEASE_DIR }}" 
+          VERSION_NUMBER="${{ steps.get_version.outputs.version_number }}"
+          # Construct the ZIP file name using the prefix from env
+          ZIP_FILE_NAME="${{ env.ZIP_FILE_NAME_PREFIX }}-v${VERSION_NUMBER}.zip"
+
+          echo "Creating ZIP file: ${ZIP_FILE_NAME} from contents of ${RELEASE_DIR_CONST}"
+          cd "${RELEASE_DIR_CONST}"
+          # Zip the contents of the release directory directly
+          zip -r "../${ZIP_FILE_NAME}" ./*
+          cd .. # Return to the original directory
+          echo "Created ${ZIP_FILE_NAME}"
+        shell: bash
+
+      - name: Upload Release ZIP as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: extension-zip # Name of the artifact
+          # Path to the file to upload (relative to the workspace root)
+          path: ${{ env.ZIP_FILE_NAME_PREFIX }}-v${{ steps.get_version.outputs.version_number }}.zip
