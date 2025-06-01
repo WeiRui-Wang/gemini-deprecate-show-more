@@ -1,17 +1,8 @@
 ---
 name: Feature request
 about: Suggest an idea or enhancement for Gemini Auto Expander
-title: "[FEATURE] "
+title: "[FEATURE] - "
 labels: enhancement, help wanted
-assignees: ''
-
----
-
----
-name: ✨ Feature Request
-about: Suggest an idea or enhancement for Gemini Auto Expander
-title: "[FEATURE] - A brief, descriptive title for the feature"
-labels: enhancement
 assignees: ''
 
 ---

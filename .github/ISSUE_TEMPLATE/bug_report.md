@@ -1,17 +1,8 @@
 ---
 name: Bug report
 about: Create a report to help us improve Gemini Auto Expander
-title: "[BUG] "
+title: "[BUG] - "
 labels: bug, enhancement
-assignees: ''
-
----
-
----
-name: 🐞 Bug Report
-about: Create a report to help us improve Gemini Auto Expander
-title: "[BUG] - A brief, descriptive title of the bug"
-labels: bug
 assignees: ''
 
 ---
